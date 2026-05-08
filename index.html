@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grade 7 MCAS Jeopardy</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #020617; color: white; }
+    button { font-family: inherit; cursor: pointer; border: none; }
+    .setup-screen { min-height: 100vh; padding: 24px; display: flex; align-items: center; justify-content: center; }
+    .setup-card { width: 100%; max-width: 900px; background: #0f172a; border: 1px solid #334155; border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,.45); padding: 36px; text-align: center; }
+    .trophy-box { width: 72px; height: 72px; margin: 0 auto 18px; border-radius: 20px; background: #facc15; color: #020617; display: flex; align-items: center; justify-content: center; font-size: 38px; }
+    .title { font-size: clamp(38px, 7vw, 72px); font-weight: 900; letter-spacing: -2px; color: #fde047; margin: 0; }
+    .subtitle { color: #cbd5e1; font-size: 19px; line-height: 1.5; max-width: 720px; margin: 18px auto 0; }
+    .team-picker { background: #1e293b; border-radius: 24px; padding: 24px; margin: 34px 0; }
+    .team-picker h2 { margin: 0 0 18px; font-size: 24px; }
+    .team-buttons { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+    .team-btn { background: #334155; color: white; padding: 18px 28px; border-radius: 16px; font-size: 22px; font-weight: 800; }
+    .team-btn:hover { background: #475569; }
+    .team-btn.selected { background: #facc15; color: #020617; }
+    .start-btn { background: #2563eb; color: white; font-size: 24px; font-weight: 800; border-radius: 22px; padding: 22px 44px; box-shadow: 0 14px 28px rgba(37,99,235,.25); }
+    .start-btn:hover { background: #3b82f6; }
+    .note { color: #94a3b8; font-size: 13px; max-width: 760px; margin: 28px auto 0; line-height: 1.4; }
+    .game-screen { height: 100vh; overflow: hidden; padding: 10px; display: none; flex-direction: column; gap: 10px; }
+    .game-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-shrink: 0; }
+    .game-header h1 { color: #fde047; font-size: clamp(24px, 4vw, 44px); margin: 0; font-weight: 900; letter-spacing: -1px; }
+    .turn-text { color: #cbd5e1; margin: 4px 0 0; font-size: 15px; }
+    .reset-btn, .play-again-btn, .close-btn { background: #1e293b; color: white; border-radius: 14px; padding: 13px 18px; font-weight: 800; font-size: 16px; }
+    .reset-btn:hover, .close-btn:hover { background: #334155; }
+    .scoreboard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; flex-shrink: 0; }
+    .team-card { background: #0f172a; border: 1px solid #334155; border-radius: 18px; padding: 10px; text-align: center; }
+    .team-card.active-team { background: #1e3a8a; }
+    .team-name { color: #cbd5e1; font-size: 14px; }
+    .team-score { color: #fde047; font-size: 28px; font-weight: 900; }
+    .winner-banner { display: none; background: #facc15; color: #020617; border-radius: 24px; padding: 18px; text-align: center; flex-shrink: 0; }
+    .winner-banner h2 { margin: 4px 0; font-size: 34px; font-weight: 900; }
+    .play-again-btn { background: #020617; margin-top: 10px; }
+    .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; flex: 1; min-height: 0; }
+    .category-column { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+    .category-header { height: 9vh; min-height: 54px; background: #1e40af; border: 1px solid #3b82f6; border-radius: 14px; padding: 8px; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 900; text-transform: uppercase; font-size: clamp(9px, 1.2vw, 15px); line-height: 1.12; box-shadow: 0 8px 18px rgba(0,0,0,.35); }
+    .clue-btn { width: 100%; height: 7.2vh; min-height: 42px; border-radius: 14px; background: #1d4ed8; border: 1px solid #60a5fa; color: #fde047; font-size: clamp(22px, 3vw, 38px); font-weight: 900; box-shadow: 0 8px 18px rgba(0,0,0,.35); transition: transform .15s, background .15s; }
+    .clue-btn:hover:not(:disabled) { background: #2563eb; transform: scale(1.02); }
+    .clue-btn:disabled { background: #1e293b; border-color: #334155; color: #1e293b; cursor: not-allowed; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.84); padding: 16px; display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal { width: 100%; max-width: 980px; background: #0f172a; border: 1px solid #334155; border-radius: 32px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.65); }
+    .modal-top { background: #1e40af; padding: 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .modal-points { color: #fde047; font-size: 28px; font-weight: 900; }
+    .modal-category { font-weight: 800; }
+    .source-pill { font-size: 13px; color: #dbeafe; background: rgba(23,37,84,.75); border-radius: 999px; padding: 7px 12px; }
+    .modal-body { padding: 28px; }
+    .question-box { background: #1e293b; border-radius: 24px; padding: 28px; text-align: center; font-size: clamp(26px, 4vw, 44px); line-height: 1.15; font-weight: 900; margin-bottom: 24px; }
+    .reveal-wrap, .close-wrap { text-align: center; }
+    .reveal-btn { background: #facc15; color: #020617; border-radius: 20px; padding: 18px 30px; font-size: 20px; font-weight: 900; }
+    .answer-area { display: none; margin-top: 18px; }
+    .answer-box { background: #064e3b; border: 1px solid #047857; border-radius: 22px; padding: 20px; margin-bottom: 20px; }
+    .answer-label { color: #6ee7b7; font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+    .answer-text { font-size: 28px; font-weight: 900; margin-top: 4px; }
+    .explanation-text { color: #cbd5e1; margin-top: 10px; font-size: 17px; line-height: 1.4; }
+    .award-title { text-align: center; color: #cbd5e1; font-weight: 800; margin-bottom: 12px; }
+    .award-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .award-card { background: #1e293b; border-radius: 18px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .award-card span { font-weight: 900; }
+    .plus-btn, .minus-btn { color: white; border-radius: 14px; padding: 12px 14px; font-weight: 900; font-size: 15px; }
+    .plus-btn { background: #059669; }
+    .minus-btn { background: #be123c; }
+    .plus-btn:hover { background: #10b981; }
+    .minus-btn:hover { background: #e11d48; }
+    .close-wrap { margin-top: 22px; }
+    @media (max-width: 900px) { .scoreboard { grid-template-columns: repeat(3, 1fr); } .award-grid { grid-template-columns: 1fr; } .modal-top { align-items: flex-start; flex-direction: column; } }
+    @media (max-width: 700px) { .setup-card { padding: 24px; } .game-header { align-items: flex-start; flex-direction: column; } .scoreboard { grid-template-columns: repeat(2, 1fr); } .board { gap: 5px; } .category-column { gap: 5px; } .category-header { font-size: 8px; padding: 4px; } .clue-btn { font-size: 20px; } }
+  </style>
+</head>
+<body>
+  <section id="setupScreen" class="setup-screen">
+    <div class="setup-card">
+      <div class="trophy-box">🏆</div>
+      <h1 class="title">Grade 7 MCAS Jeopardy</h1>
+      <p class="subtitle">Review game organized by the five Grade 7 MCAS math reporting categories. Choose teams, pick clues, reveal answers, and crown a winner.</p>
+      <div class="team-picker"><h2>👥 Choose Number of Teams</h2><div id="teamButtons" class="team-buttons"></div></div>
+      <button id="startBtn" class="start-btn">Start Game</button>
+      <p class="note">Note: 2023 MCAS items were released publicly. For 2024, Massachusetts released standards/item descriptions but not the full Grade 7 item text, so the 2024-style clues are original practice questions aligned to the official descriptions.</p>
+    </div>
+  </section>
+
+  <section id="gameScreen" class="game-screen">
+    <header class="game-header"><div><h1>Grade 7 MCAS Jeopardy</h1><p class="turn-text">Current turn: <strong id="currentTurn">Team 1</strong></p></div><button id="resetBtn" class="reset-btn">↻ Reset</button></header>
+    <div id="scoreboard" class="scoreboard"></div>
+    <div id="winnerBanner" class="winner-banner"><div style="font-size:44px;">🏆</div><h2 id="winnerText"></h2><p id="finalScore" style="font-weight:800;margin:0;"></p><button id="playAgainBtn" class="play-again-btn">Play Again</button></div>
+    <main id="board" class="board"></main>
+  </section>
+
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-top"><div><div id="modalPoints" class="modal-points"></div><div id="modalCategory" class="modal-category"></div></div><div id="modalSource" class="source-pill"></div></div>
+      <div class="modal-body">
+        <div id="modalQuestion" class="question-box"></div>
+        <div id="revealWrap" class="reveal-wrap"><button id="revealBtn" class="reveal-btn">👀 Reveal Answer</button></div>
+        <div id="answerArea" class="answer-area"><div class="answer-box"><div class="answer-label">Answer</div><div id="modalAnswer" class="answer-text"></div><div id="modalExplanation" class="explanation-text"></div></div><div class="award-title">Award points:</div><div id="awardGrid" class="award-grid"></div></div>
+        <div class="close-wrap"><button id="closeBtn" class="close-btn">Close Question</button></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const categories = ["Ratios & Proportional Relationships", "Number System", "Expressions & Equations", "Geometry", "Statistics & Probability"];
+    const questions = [
+      { id: "rp-100", category: categories[0], value: 100, source: "2024 MCAS-style, 7.RP.A.2", question: "A graph shows that 6 notebooks cost $15. What is the unit rate in dollars per notebook?", answer: "$2.50 per notebook", explanation: "15 ÷ 6 = 2.5, so each notebook costs $2.50." },
+      { id: "rp-200", category: categories[0], value: 200, source: "2023/2024 MCAS-style, 7.RP.A.1", question: "A runner travels 3/4 mile in 1/6 hour. What is the runner’s speed in miles per hour?", answer: "4.5 miles per hour", explanation: "Unit rate = (3/4) ÷ (1/6) = (3/4)(6/1) = 18/4 = 4.5." },
+      { id: "rp-300", category: categories[0], value: 300, source: "2024 MCAS-style, 7.RP.A.2", question: "A proportional relationship is shown by y = 8x. What does the 8 represent?", answer: "The constant of proportionality / unit rate", explanation: "In y = kx, k is the constant of proportionality. Here k = 8." },
+      { id: "rp-400", category: categories[0], value: 400, source: "2023/2024 MCAS-style, 7.RP.A.3", question: "A jacket originally costs $80. It is on sale for 25% off. What is the sale price?", answer: "$60", explanation: "25% of 80 is 20. Then 80 − 20 = 60." },
+      { id: "rp-500", category: categories[0], value: 500, source: "2024 MCAS-style, 7.RP.A.3", question: "A school club had 40 members last year. This year it has 52 members. What is the percent increase?", answer: "30%", explanation: "Increase = 12. Percent increase = 12 ÷ 40 = 0.30 = 30%." },
+      { id: "rp-600", category: categories[0], value: 600, source: "2023/2024 MCAS-style, 7.RP.A.2", question: "A recipe uses 3 cups of flour for every 2 cups of sugar. Which proportion could find x, the cups of flour needed for 10 cups of sugar?", answer: "3/2 = x/10", explanation: "Keep flour over sugar: 3 cups flour / 2 cups sugar = x cups flour / 10 cups sugar." },
+      { id: "rp-700", category: categories[0], value: 700, source: "2024 MCAS-style, 7.RP.A.1", question: "A cyclist rides 2 1/2 miles in 1/5 hour. At this rate, how far does the cyclist ride in 1 hour?", answer: "12.5 miles", explanation: "2.5 ÷ 0.2 = 12.5 miles per hour." },
+      { id: "ns-100", category: categories[1], value: 100, source: "2024 MCAS-style, 7.NS.A.2", question: "Is the product (-4)(-7) positive or negative?", answer: "Positive", explanation: "A negative times a negative is positive." },
+      { id: "ns-200", category: categories[1], value: 200, source: "2024 MCAS-style, 7.NS.A.2", question: "Convert 3/8 to a decimal.", answer: "0.375", explanation: "3 ÷ 8 = 0.375." },
+      { id: "ns-300", category: categories[1], value: 300, source: "2024 MCAS-style, 7.NS.A.1", question: "The temperature was -6°F in the morning and rose 14°F by afternoon. What was the afternoon temperature?", answer: "8°F", explanation: "-6 + 14 = 8." },
+      { id: "ns-400", category: categories[1], value: 400, source: "2023/2024 MCAS-style, 7.NS.A.3", question: "A student has $25. She spends 2/5 of it on lunch. How much money does she have left?", answer: "$15", explanation: "2/5 of 25 is 10. Then 25 − 10 = 15." },
+      { id: "ns-500", category: categories[1], value: 500, source: "2024 MCAS-style, 7.NS.A.2", question: "Which fraction has a terminating decimal: 5/12, 7/20, 2/9, or 4/15?", answer: "7/20", explanation: "20 has only factors 2 and 5, so 7/20 terminates. 7/20 = 0.35." },
+      { id: "ns-600", category: categories[1], value: 600, source: "2024 MCAS-style, 7.NS.A.3", question: "Evaluate: -3.5 + 2(4 - 6.5)", answer: "-8.5", explanation: "4 − 6.5 = -2.5. Then 2(-2.5) = -5. Finally -3.5 + -5 = -8.5." },
+      { id: "ns-700", category: categories[1], value: 700, source: "2024 MCAS-style, 7.NS.A.3", question: "Order these from least to greatest: -1.2, -5/4, 0.3, -0.75", answer: "-5/4, -1.2, -0.75, 0.3", explanation: "-5/4 = -1.25, which is less than -1.2." },
+      { id: "ee-100", category: categories[2], value: 100, source: "2024 MCAS-style, 7.EE.A.1", question: "Simplify: 3(x + 4)", answer: "3x + 12", explanation: "Distribute 3 to x and 4." },
+      { id: "ee-200", category: categories[2], value: 200, source: "2024 MCAS-style, 7.EE.A.1", question: "Simplify: 5x + 2 - 3x + 7", answer: "2x + 9", explanation: "Combine like terms: 5x − 3x = 2x and 2 + 7 = 9." },
+      { id: "ee-300", category: categories[2], value: 300, source: "2024 MCAS-style, 7.EE.B.4", question: "Solve: 4x - 9 = 23", answer: "x = 8", explanation: "Add 9 to both sides: 4x = 32. Divide by 4: x = 8." },
+      { id: "ee-400", category: categories[2], value: 400, source: "2024 MCAS-style, 7.EE.B.4", question: "A movie ticket costs $12. Snacks cost s dollars. The total is more than $20. Which inequality represents this situation?", answer: "12 + s > 20", explanation: "The total cost is ticket plus snacks, and it is more than 20." },
+      { id: "ee-500", category: categories[2], value: 500, source: "2024 MCAS-style, 7.EE.A.2", question: "A rectangle has length 2x + 5 and width x + 1. Write an expression for the perimeter.", answer: "6x + 12", explanation: "P = 2(2x + 5) + 2(x + 1) = 4x + 10 + 2x + 2 = 6x + 12." },
+      { id: "ee-600", category: categories[2], value: 600, source: "2024 MCAS-style, 7.EE.B.3", question: "A shirt is 30% off. The original price is $40. A student says the sale price is $28 because 0.70 × 40 = 28. Is the student correct?", answer: "Yes, the student is correct.", explanation: "After 30% off, the customer pays 70% of the original price. 0.70 × 40 = 28." },
+      { id: "ee-700", category: categories[2], value: 700, source: "2023/2024 MCAS-style, 7.EE.A.2", question: "Rewrite 4(2x - 3) + 5x in simplest form, then evaluate it when x = 2.", answer: "13x - 12; when x = 2, the value is 14.", explanation: "4(2x − 3) + 5x = 8x − 12 + 5x = 13x − 12. Then 13(2) − 12 = 14." },
+      { id: "g-100", category: categories[3], value: 100, source: "2024 MCAS-style, 7.G.B.5", question: "Two angles are supplementary. One angle is 65°. What is the measure of the other angle?", answer: "115°", explanation: "Supplementary angles add to 180°. 180 − 65 = 115." },
+      { id: "g-200", category: categories[3], value: 200, source: "2024 MCAS-style, 7.G.B.5", question: "Two angles are complementary. One angle is 38°. What is the measure of the other angle?", answer: "52°", explanation: "Complementary angles add to 90°. 90 − 38 = 52." },
+      { id: "g-300", category: categories[3], value: 300, source: "2024 MCAS-style, 7.G.A.1", question: "A scale drawing uses 1 inch to represent 6 feet. A room is 4 inches long on the drawing. What is the actual length?", answer: "24 feet", explanation: "4 × 6 = 24 feet." },
+      { id: "g-400", category: categories[3], value: 400, source: "2024 MCAS-style, 7.G.A.2", question: "Can a triangle have side lengths 4 cm, 7 cm, and 12 cm? Explain.", answer: "No", explanation: "The two smaller sides must add to more than the largest side. 4 + 7 = 11, and 11 is not greater than 12." },
+      { id: "g-500", category: categories[3], value: 500, source: "2024 MCAS-style, 7.G.A.3", question: "A cube is sliced parallel to one of its faces. What shape is the cross section?", answer: "A square", explanation: "A slice parallel to a square face of a cube creates a square cross section." },
+      { id: "g-600", category: categories[3], value: 600, source: "2023/2024 MCAS-style, 7.G.B.5", question: "Two lines intersect. One angle measures 124°. What is the measure of the vertical angle?", answer: "124°", explanation: "Vertical angles are congruent, so they have the same measure." },
+      { id: "g-700", category: categories[3], value: 700, source: "2024 MCAS-style, 7.G.A.1", question: "A scale drawing of a rectangle is 5 cm by 8 cm. The scale is 1 cm = 3 meters. What is the actual area?", answer: "360 square meters", explanation: "Actual dimensions are 15 m by 24 m. Area = 15 × 24 = 360 square meters." },
+      { id: "sp-100", category: categories[4], value: 100, source: "2024 MCAS-style, 7.SP.C.5", question: "A bag has 3 red marbles and 7 blue marbles. What is the probability of choosing a red marble?", answer: "3/10 or 30%", explanation: "There are 3 red out of 10 total marbles." },
+      { id: "sp-200", category: categories[4], value: 200, source: "2024 MCAS-style, 7.SP.B.3", question: "Class A has a median score of 82. Class B has a median score of 76. What is the difference of the medians?", answer: "6 points", explanation: "82 − 76 = 6." },
+      { id: "sp-300", category: categories[4], value: 300, source: "2024 MCAS-style, 7.SP.C.6", question: "A spinner lands on green 18 times out of 60 spins. Based on this experiment, what is the experimental probability of green?", answer: "3/10 or 30%", explanation: "18/60 simplifies to 3/10." },
+      { id: "sp-400", category: categories[4], value: 400, source: "2024 MCAS-style, 7.SP.A.1", question: "A principal wants to know what students think about lunch. Which sample is most representative: only 7th grade athletes, every 10th student entering the cafeteria, only students in band, or only students who bring lunch?", answer: "Every 10th student entering the cafeteria", explanation: "This gives a broader sample of the school population than choosing one specific group." },
+      { id: "sp-500", category: categories[4], value: 500, source: "2024 MCAS-style, 7.SP.B.4", question: "Data Set A: 4, 5, 6, 7, 8. Data Set B: 2, 4, 6, 8, 10. Which set has the greater range?", answer: "Data Set B", explanation: "Set A range = 8 − 4 = 4. Set B range = 10 − 2 = 8." },
+      { id: "sp-600", category: categories[4], value: 600, source: "2024 MCAS-style, 7.SP.C.8", question: "A coin is flipped and a number cube is rolled. What is the probability of getting heads and rolling a 4?", answer: "1/12", explanation: "P(heads) = 1/2 and P(4) = 1/6. Multiply: 1/2 × 1/6 = 1/12." },
+      { id: "sp-700", category: categories[4], value: 700, source: "2023/2024 MCAS-style, 7.SP.C.8", question: "A lunch combo has 2 sandwich choices, 3 drink choices, and 2 side choices. How many different lunch combos are possible?", answer: "12 combos", explanation: "2 × 3 × 2 = 12." }
+    ];
+
+    function runSelfTests() {
+      const ids = questions.map(q => q.id);
+      const uniqueIds = new Set(ids);
+      console.assert(categories.length === 5, "There should be 5 categories.");
+      console.assert(questions.length === 35, "There should be 35 questions.");
+      console.assert(uniqueIds.size === questions.length, "Every question ID should be unique.");
+      console.assert(categories.every(c => questions.filter(q => q.category === c).length === 7), "Each category should have 7 questions.");
+      console.assert(questions.every(q => [100,200,300,400,500,600,700].includes(q.value)), "Point values should be 100 through 700.");
+    }
+    runSelfTests();
+
+    let teamCount = 2;
+    let teams = [];
+    let answered = new Set();
+    let active = null;
+    let currentTeam = 0;
+
+    const setupScreen = document.getElementById("setupScreen");
+    const gameScreen = document.getElementById("gameScreen");
+    const teamButtons = document.getElementById("teamButtons");
+    const startBtn = document.getElementById("startBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const playAgainBtn = document.getElementById("playAgainBtn");
+    const scoreboard = document.getElementById("scoreboard");
+    const boardEl = document.getElementById("board");
+    const currentTurn = document.getElementById("currentTurn");
+    const winnerBanner = document.getElementById("winnerBanner");
+    const winnerText = document.getElementById("winnerText");
+    const finalScore = document.getElementById("finalScore");
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const modalPoints = document.getElementById("modalPoints");
+    const modalCategory = document.getElementById("modalCategory");
+    const modalSource = document.getElementById("modalSource");
+    const modalQuestion = document.getElementById("modalQuestion");
+    const revealWrap = document.getElementById("revealWrap");
+    const revealBtn = document.getElementById("revealBtn");
+    const answerArea = document.getElementById("answerArea");
+    const modalAnswer = document.getElementById("modalAnswer");
+    const modalExplanation = document.getElementById("modalExplanation");
+    const awardGrid = document.getElementById("awardGrid");
+    const closeBtn = document.getElementById("closeBtn");
+
+    function buildTeamPicker() {
+      teamButtons.innerHTML = "";
+      [1,2,3,4,5,6].forEach(num => {
+        const btn = document.createElement("button");
+        btn.className = "team-btn" + (num === teamCount ? " selected" : "");
+        btn.textContent = num;
+        btn.addEventListener("click", () => { teamCount = num; buildTeamPicker(); });
+        teamButtons.appendChild(btn);
+      });
+    }
+
+    function startGame() {
+      teams = Array.from({ length: teamCount }, (_, i) => ({ name: `Team ${i + 1}`, score: 0 }));
+      answered = new Set(); active = null; currentTeam = 0;
+      setupScreen.style.display = "none";
+      gameScreen.style.display = "flex";
+      renderGame();
+    }
+
+    function resetGame() {
+      modalBackdrop.style.display = "none";
+      gameScreen.style.display = "none";
+      setupScreen.style.display = "flex";
+      teams = []; answered = new Set(); active = null; currentTeam = 0;
+      buildTeamPicker();
+    }
+
+    function renderGame() { renderScoreboard(); renderWinner(); renderBoard(); }
+
+    function renderScoreboard() {
+      scoreboard.innerHTML = "";
+      teams.forEach((team, index) => {
+        const card = document.createElement("div");
+        card.className = "team-card" + (index === currentTeam ? " active-team" : "");
+        card.innerHTML = `<div class="team-name">${team.name}</div><div class="team-score">${team.score}</div>`;
+        scoreboard.appendChild(card);
+      });
+      currentTurn.textContent = teams[currentTeam] ? teams[currentTeam].name : "Team 1";
+    }
+
+    function renderWinner() {
+      if (answered.size !== questions.length) { winnerBanner.style.display = "none"; return; }
+      const topScore = Math.max(...teams.map(t => t.score));
+      const winners = teams.filter(t => t.score === topScore);
+      winnerText.textContent = winners.length === 1 ? `${winners[0].name} wins!` : `Tie game: ${winners.map(w => w.name).join(" & ")}!`;
+      finalScore.textContent = `Final score: ${topScore}`;
+      winnerBanner.style.display = "block";
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = "";
+      categories.forEach(category => {
+        const col = document.createElement("div");
+        col.className = "category-column";
+        const header = document.createElement("div");
+        header.className = "category-header";
+        header.textContent = category;
+        col.appendChild(header);
+        questions.filter(q => q.category === category).sort((a,b) => a.value - b.value).forEach(clue => {
+          const btn = document.createElement("button");
+          btn.className = "clue-btn";
+          btn.textContent = answered.has(clue.id) ? "" : clue.value;
+          btn.disabled = answered.has(clue.id) || answered.size === questions.length;
+          btn.addEventListener("click", () => chooseClue(clue));
+          col.appendChild(btn);
+        });
+        boardEl.appendChild(col);
+      });
+    }
+
+    function chooseClue(clue) {
+      if (answered.has(clue.id)) return;
+      active = clue;
+      modalPoints.textContent = `${clue.value} Points`;
+      modalCategory.textContent = clue.category;
+      modalSource.textContent = clue.source;
+      modalQuestion.textContent = clue.question;
+      modalAnswer.textContent = clue.answer;
+      modalExplanation.textContent = clue.explanation;
+      revealWrap.style.display = "block";
+      answerArea.style.display = "none";
+      awardGrid.innerHTML = "";
+      modalBackdrop.style.display = "flex";
+    }
+
+    function revealAnswer() {
+      revealWrap.style.display = "none";
+      answerArea.style.display = "block";
+      renderAwardButtons();
+    }
+
+    function renderAwardButtons() {
+      awardGrid.innerHTML = "";
+      teams.forEach((team, index) => {
+        const card = document.createElement("div");
+        card.className = "award-card";
+        card.innerHTML = `<span>${team.name}</span><div><button class="plus-btn">✓ +${active.value}</button> <button class="minus-btn">✕ -${active.value}</button></div>`;
+        card.querySelector(".plus-btn").addEventListener("click", () => adjustScore(index, active.value));
+        card.querySelector(".minus-btn").addEventListener("click", () => adjustScore(index, -active.value));
+        awardGrid.appendChild(card);
+      });
+    }
+
+    function adjustScore(teamIndex, amount) {
+      teams[teamIndex].score += amount;
+      renderScoreboard();
+      renderAwardButtons();
+    }
+
+    function closeClue() {
+      if (active) answered.add(active.id);
+      active = null;
+      modalBackdrop.style.display = "none";
+      currentTeam = teams.length ? (currentTeam + 1) % teams.length : 0;
+      renderGame();
+    }
+
+    startBtn.addEventListener("click", startGame);
+    resetBtn.addEventListener("click", resetGame);
+    playAgainBtn.addEventListener("click", resetGame);
+    revealBtn.addEventListener("click", revealAnswer);
+    closeBtn.addEventListener("click", closeClue);
+    buildTeamPicker();
+  </script>
+</body>
+</html>
